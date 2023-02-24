@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "538702585224",
+    "project_id": "diaryapp-377318",
+    "storage_bucket": "diaryapp-377318.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538702585224:android:50e797db67c78236892e3d",
+        "android_client_info": {
+          "package_name": "com.example.dialyapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "538702585224-uj69irbaj1o3ge6u3fl3pae2heo6r27f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA02Ic8R4OQbJ478iw9kSM3h-Vxlp7fG5c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "538702585224-cv4b7vg1mnaudm1r7h844k49gif54nao.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
