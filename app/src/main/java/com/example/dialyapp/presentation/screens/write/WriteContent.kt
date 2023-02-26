@@ -22,12 +22,14 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.dialyapp.model.Diary
+import com.example.dialyapp.model.GalleryImage
 import com.example.dialyapp.model.GalleryState
 import com.example.dialyapp.model.Mood
 import com.example.dialyapp.presentation.components.GalleryUpload
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.PagerState
+import io.realm.kotlin.ext.toRealmList
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPagerApi::class, ExperimentalMaterial3Api::class)
@@ -43,6 +45,7 @@ fun WriteContent(
     pagerState: PagerState,
     onSaveClick: (Diary) -> Unit,
     onImageSelect: (Uri) -> Unit,
+    onImageClicked: (GalleryImage) -> Unit
 ) {
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -130,7 +133,7 @@ fun WriteContent(
                 galleryState = galleryState,
                 onImageAdd = { focusManager.clearFocus()  },
                 onImageSelect = onImageSelect,
-                onImageClick ={  }
+                onImageClick = onImageClicked
             )
             Spacer(modifier = Modifier.height(12.dp))
             Button(
@@ -143,6 +146,7 @@ fun WriteContent(
                             Diary().apply {
                                 this.title = uiState.title
                                 this.description = uiState.description
+                                this.images = galleryState.images.map { it.remoteImagePath }.toRealmList()
                             }
                         )
                     } else {

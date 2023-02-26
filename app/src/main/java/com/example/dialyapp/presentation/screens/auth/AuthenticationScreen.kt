@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.example.dialyapp.util.Constants.CLIENT_ID
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.stevdzasan.messagebar.ContentWithMessageBar
 import com.stevdzasan.messagebar.MessageBarState
 import com.stevdzasan.onetap.OneTapSignInState
@@ -26,6 +28,7 @@ fun AuthenticationScreen(
     messageBarState: MessageBarState,
     onButtonClicked: ()-> Unit,
     onSuccessfulFirebaseSignIn: (String) -> Unit,
+    onFailedFirebaseSignIn: (Exception) -> Unit,
     onDialogDismissed: (String) -> Unit,
     navigateToHome:() -> Unit
 ){
@@ -48,7 +51,15 @@ fun AuthenticationScreen(
         state = oneTapState,
         clientId = CLIENT_ID,
         onTokenIdReceived = {tokenId->
-            onSuccessfulFirebaseSignIn(tokenId)
+            val credential = GoogleAuthProvider.getCredential(tokenId,null)
+            FirebaseAuth.getInstance().signInWithCredential(credential)
+                .addOnCompleteListener {
+                    if (it.isSuccessful){
+                        onSuccessfulFirebaseSignIn(tokenId)
+                    } else {
+                        it.exception?.let { it1 -> onFailedFirebaseSignIn(it1) }
+                    }
+                }
         },
         onDialogDismissed = {message->
             onDialogDismissed(message)

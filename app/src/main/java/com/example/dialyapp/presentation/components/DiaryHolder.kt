@@ -1,5 +1,7 @@
 package com.example.dialyapp.presentation.components
 
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -16,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -25,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.example.dialyapp.model.Diary
 import com.example.dialyapp.model.Mood
 import com.example.dialyapp.ui.theme.Elevation
+import com.example.dialyapp.util.fetchImagesFromFirebase
 import com.example.dialyapp.util.toInstant
 import io.realm.kotlin.ext.realmListOf
 import java.text.SimpleDateFormat
@@ -39,6 +43,37 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
     }
     var galleryOpened by remember {
         mutableStateOf(false)
+    }
+    val context = LocalContext.current
+    var galleryLoading by remember { mutableStateOf(false) }
+    val downloadImages = remember {
+        mutableStateListOf<Uri>()
+    }
+
+    LaunchedEffect(key1 = galleryOpened) {
+        if (galleryOpened && downloadImages.isEmpty()) {
+            galleryLoading = true
+            fetchImagesFromFirebase(
+                remoteImagePaths = diary.images,
+                onImageDownload = { image ->
+                    downloadImages.add(image)
+                },
+                onImageDownloadFailed = {
+                    Toast.makeText(
+                        context,
+                        "Images not uploaded yet." +
+                                "Wait a little bit, or try uploading again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    galleryLoading = false
+                    galleryOpened = false
+                },
+                onReadyToDisplay = {
+                    galleryLoading = false
+                    galleryOpened = true
+                }
+            )
+        }
     }
 
     Row(modifier = Modifier.clickable(indication = null, interactionSource = remember {
@@ -73,14 +108,14 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
                 if (diary.images.isNotEmpty()) {
                     ShowGalleryButton(
                         galleryOpened = galleryOpened,
-//                        galleryLoading = galleryLoading,
+                        galleryLoading = galleryLoading,
                         onClick = {
                             galleryOpened = !galleryOpened
                         }
                     )
                 }
                 AnimatedVisibility(
-                    visible = galleryOpened,
+                    visible = galleryOpened  && !galleryLoading,
                     enter = fadeIn() + expandVertically(
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -89,7 +124,7 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
                     )
                 ) {
                     Column(modifier = Modifier.padding(all = 14.dp)) {
-                        Gallery(images = diary.images)
+                        Gallery(images = downloadImages)
                     }
                 }
             }
@@ -132,12 +167,13 @@ fun DiaryHeader(moodName: String, time: Instant) {
 @Composable
 fun ShowGalleryButton(
     galleryOpened: Boolean,
-//    galleryLoading: Boolean,
+    galleryLoading: Boolean,
     onClick: () -> Unit
 ) {
     TextButton(onClick = onClick) {
         Text(
-            text = if (galleryOpened) "Hide Gallery"
+            text = if (galleryOpened)
+                if (galleryLoading) "Loading" else "Hide Gallery"
             else "Show Gallery",
             style = TextStyle(fontSize = MaterialTheme.typography.bodySmall.fontSize)
         )

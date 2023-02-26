@@ -9,6 +9,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -91,10 +92,16 @@ fun NavGraphBuilder.authenticationRoute(
                     viewModel.setLoading(false)
                 }, onError = { message ->
                     messageBarState.addError(message)
+                    viewModel.setLoading(false)
                 })
+            },
+            onFailedFirebaseSignIn = {
+                messageBarState.addError(Exception(it))
+                viewModel.setLoading(false)
             },
             onDialogDismissed = {
                 messageBarState.addError(Exception(it))
+                viewModel.setLoading(false)
             },
             navigateToHome = navigateToHome
         )
@@ -163,11 +170,11 @@ fun NavGraphBuilder.writeRoute(
         })
     ) {
 
-        val vm: WriteViewModel = viewModel()
+        val vm: WriteViewModel = hiltViewModel()
         val uiState = vm.uiState
         val context = LocalContext.current
         val pagerState = rememberPagerState()
-        val galleryState = rememberGalleryState()
+        val galleryState = vm.galleryState
         val pageNumber by remember {
             derivedStateOf { pagerState.currentPage }
         }
@@ -209,12 +216,14 @@ fun NavGraphBuilder.writeRoute(
             },
             galleryState = galleryState,
             onImageSelect = {
-                galleryState.addImage(
-                    GalleryImage(
-                        image = it,
-                        remoteImagePath = ""
-                    )
+                val type = context.contentResolver.getType(it)?.split("/")?.last() ?: "jpg"
+                vm.addImage(
+                    image = it,
+                    imageType = type
                 )
+            },
+            onImageDeleteClicked = {
+                galleryState.removeImage(it)
             }
         )
     }
