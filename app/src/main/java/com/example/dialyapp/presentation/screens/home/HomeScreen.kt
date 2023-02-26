@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.dialyapp.R
 import com.example.dialyapp.data.repository.Diaries
 import com.example.dialyapp.model.RequestState
+import java.time.ZonedDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -26,18 +28,29 @@ fun HomeScreen(
     onMenuClicked: () -> Unit,
     navigateToWriteWithArg: (String) -> Unit,
     onSignOutClicked: () -> Unit,
-    navigateToWrite: () -> Unit
+    onDeleteAllClicked: () -> Unit,
+    navigateToWrite: () -> Unit,
+    dateIsSelected: Boolean,
+    onDateSelected: (ZonedDateTime) -> Unit,
+    onDateReset: () -> Unit
 ) {
     var padding by remember { mutableStateOf(PaddingValues()) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     NavigationDrawer(
         drawerState = drawerState,
-        onSignOutClicked = onSignOutClicked
+        onSignOutClicked = onSignOutClicked,
+        onDeleteAll = onDeleteAllClicked
     ) {
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
-                HomeTopBar(scrollBehavior = scrollBehavior,onMenuClicked = onMenuClicked)
+                HomeTopBar(
+                    scrollBehavior = scrollBehavior,
+                    onMenuClicked = onMenuClicked,
+                    dateIsSelected = dateIsSelected,
+                    onDateSelected = onDateSelected,
+                    onDateReset = onDateReset
+                )
             },
             floatingActionButton = {
                 FloatingActionButton(
@@ -78,11 +91,11 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationDrawer(
     drawerState: DrawerState,
     onSignOutClicked: () -> Unit,
+    onDeleteAll: () -> Unit,
     content: @Composable () -> Unit
 ) {
     ModalNavigationDrawer(
@@ -116,6 +129,25 @@ fun NavigationDrawer(
                         },
                         selected = false,
                         onClick = onSignOutClicked
+                    )
+// delete all
+                    NavigationDrawerItem(
+                        label = {
+                            Row(modifier = Modifier.padding(horizontal = 12.dp)) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "delete icon",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Delete All Diaries",
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        },
+                        selected = false,
+                        onClick = onDeleteAll
                     )
                 })
         },

@@ -1,8 +1,5 @@
 package com.example.dialyapp.navigation
 
-import android.app.Activity
-import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,7 +14,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.dialyapp.data.repository.MongoDB
 import com.example.dialyapp.model.*
 import com.example.dialyapp.presentation.components.DisplayAlertDialog
 import com.example.dialyapp.presentation.screens.auth.AuthenticationScreen
@@ -108,7 +104,7 @@ fun NavGraphBuilder.authenticationRoute(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 fun NavGraphBuilder.homeRoute(
     navigateToWrite: () -> Unit,
     navigateToWriteWithArg: (String) -> Unit,
@@ -116,10 +112,14 @@ fun NavGraphBuilder.homeRoute(
     onDataLoaded: () -> Unit
 ) {
     composable(route = Screen.Home.route) {
-        val viewModel: HomeViewModel = viewModel()
+        val viewModel: HomeViewModel = hiltViewModel()
         val diaries by viewModel.diaries
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val context = LocalContext.current
         var signOutDialogOpened by remember {
+            mutableStateOf(false)
+        }
+        var deleteDialogOpened by remember {
             mutableStateOf(false)
         }
         val scope = rememberCoroutineScope()
@@ -130,13 +130,25 @@ fun NavGraphBuilder.homeRoute(
             }
         }
 
-        HomeScreen(diaries = diaries, drawerState = drawerState, onMenuClicked = {
-            scope.launch {
-                drawerState.open()
-            }
-        }, onSignOutClicked = {
-            signOutDialogOpened = true
-        }, navigateToWrite = navigateToWrite, navigateToWriteWithArg = navigateToWriteWithArg
+        HomeScreen(
+            diaries = diaries,
+            drawerState = drawerState,
+            onMenuClicked = {
+                scope.launch {
+                    drawerState.open()
+                }
+            },
+            onSignOutClicked = {
+                signOutDialogOpened = true
+            },
+            navigateToWrite = navigateToWrite,
+            navigateToWriteWithArg = navigateToWriteWithArg,
+            onDeleteAllClicked = {
+                deleteDialogOpened = true
+            },
+            dateIsSelected = viewModel.dateIsSelected,
+            onDateSelected = { viewModel.getDiaries(it) },
+            onDateReset = { viewModel.getDiaries() }
         )
 
         DisplayAlertDialog(title = "Sign Out",
@@ -153,6 +165,37 @@ fun NavGraphBuilder.homeRoute(
                         }
                     }
                 }
+            })
+
+        DisplayAlertDialog(title = "Delete All Diaries",
+            message = "Are you sure, you want to permanently delete all your diaries?",
+            dialogOpened = deleteDialogOpened,
+            onDialogClosed = { deleteDialogOpened = false },
+            onYesClicked = {
+                viewModel.deleteAllDiaries(
+                    onSuccess = {
+                        Toast.makeText(
+                            context,
+                            "All Diaries Deleted.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    },
+                    onError = {
+                        Toast.makeText(
+                            context,
+                            if (it.message == "No Internet Connection.")
+                                "We need an Internet Connection for this operation."
+                            else it.message,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    }
+                )
             })
     }
 }
